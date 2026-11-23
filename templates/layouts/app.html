@@ -1,0 +1,72 @@
+{% extends "layouts/base.html" %}
+{% from "layouts/_icons.html" import icon, logo_mark %}
+
+{% block body %}
+{% set nav_items = [
+  ('dashboard',   'Dashboard',     'home',    url_for('dashboard.index')),
+  ('quickplay',   'Quick Play',    'zap',     url_for('dashboard.index') ~ '#play'),
+  ('rooms',       'Room',          'plus',    url_for('dashboard.index') ~ '#play'),
+  ('leaderboard', 'Leaderboard',   'trophy',  None),
+  ('history',     'Match History', 'history', None),
+  ('profile',     'Profil',        'user',    None),
+] %}
+
+<div class="app-shell">
+  <div class="sidebar-overlay" data-sidebar-close></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="Navigasi utama">
+    <a class="brand" href="{{ url_for('dashboard.index') }}">
+      {{ logo_mark(38) }}
+      <span class="brand-text"><strong>CHECKMATE</strong><span>ARENA</span></span>
+    </a>
+
+    <nav class="nav">
+      <p class="nav-label">Menu</p>
+      {% for key, label, ic, href in nav_items %}
+        {% if href %}
+          <a class="nav-item{% if key == active_page %} is-active{% endif %}" href="{{ href }}"{% if key == active_page %} aria-current="page"{% endif %}>
+            {{ icon(ic, 20) }}<span>{{ label }}</span>
+          </a>
+        {% else %}
+          <span class="nav-item is-disabled" title="Fitur ini dibuka di tahap berikutnya" aria-disabled="true">
+            {{ icon(ic, 20) }}<span>{{ label }}</span><span class="nav-soon">Segera</span>
+          </span>
+        {% endif %}
+      {% endfor %}
+    </nav>
+
+    <div class="player-card">
+      {% if player %}
+        <div class="avatar" style="background: {{ player.avatar_color }}">{{ player.username[:1]|upper }}</div>
+        <div class="player-meta"><strong>{{ player.username }}</strong><span>Rating {{ player.rating }}</span></div>
+      {% else %}
+        <div class="avatar avatar-guest">{{ icon('user', 20) }}</div>
+        <div class="player-meta"><strong>Tamu</strong><span>Belum masuk</span></div>
+      {% endif %}
+    </div>
+    {% if player %}
+    <form class="logout-form" method="post" action="{{ url_for('auth.logout') }}"
+          onsubmit="return confirm('Keluar dari profil ini? Profil tidak bisa dibuka lagi di browser ini, dan nickname-nya tetap terpakai.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-ghost logout-btn" type="submit">Keluar</button>
+    </form>
+    {% endif %}
+  </aside>
+
+  <div class="app-main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" type="button" data-sidebar-toggle aria-label="Buka menu" aria-controls="sidebar" aria-expanded="false">
+          {{ icon('menu', 20) }}
+        </button>
+        <h2>{% block page_title %}{% endblock %}</h2>
+      </div>
+      <div class="status-chip"><span class="status-dot"></span>Server online</div>
+    </header>
+
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

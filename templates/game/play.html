@@ -1,0 +1,132 @@
+{% extends "layouts/base.html" %}
+{% from "layouts/_icons.html" import icon, logo_mark %}
+
+{% macro player_bar(pos) %}
+<div class="player-bar" id="bar-{{ pos }}">
+  <div class="pb-left">
+    <span class="avatar pb-avatar" id="{{ pos }}-avatar">?</span>
+    <div class="pb-meta">
+      <strong id="{{ pos }}-name">Menunggu lawan…</strong>
+      <span id="{{ pos }}-rating"></span>
+    </div>
+    <span class="presence" id="{{ pos }}-presence"></span>
+    <div class="captured" id="{{ pos }}-captured"></div>
+  </div>
+  <div class="clock" id="{{ pos }}-clock">--:--</div>
+</div>
+{% endmacro %}
+
+{% block title %}Room {{ code }} — CHECKMATE ARENA{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/game.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="game-page">
+  <header class="game-top">
+    <a class="game-brand" href="{{ url_for('dashboard.index') }}">
+      {{ logo_mark(34) }}<span>CHECKMATE <b>ARENA</b></span>
+    </a>
+    <div class="game-top-right">
+      <span class="room-chip" title="Kode room">{{ icon('grid', 15) }} {{ code }}</span>
+      <span class="status-chip"><span class="status-dot off" id="conn-dot"></span><span id="conn-text">Menyambung…</span></span>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+    </div>
+  </header>
+
+  <main class="game-main">
+    <section class="board-col">
+      {{ player_bar('top') }}
+
+      <div class="board-wrap">
+        <div class="board" id="board" aria-label="Papan catur"></div>
+
+        <div class="board-overlay" id="waiting-overlay" hidden>
+          <div class="invite-card" id="invite-card">
+            <span class="eyebrow">Menunggu lawan</span>
+            <div class="invite-code" id="invite-code">------</div>
+            <p class="invite-text">Bagikan kode atau link ini ke temanmu.</p>
+            <div class="invite-link">
+              <input class="input input-plain" id="invite-link" type="text" readonly aria-label="Link undangan">
+              <button class="btn btn-primary btn-sm" id="copy-link" type="button">Salin link</button>
+            </div>
+            <button class="btn btn-ghost btn-sm invite-code-btn" id="copy-code" type="button">Salin kode</button>
+          </div>
+          <div class="invite-card" id="closed-card" hidden>
+            <h3>Room ini sudah ditutup</h3>
+            <p class="invite-text">Buat room baru dari dashboard.</p>
+            <a class="btn btn-primary" href="{{ url_for('dashboard.index') }}">Ke dashboard</a>
+          </div>
+        </div>
+      </div>
+
+      {{ player_bar('bottom') }}
+    </section>
+
+    <aside class="side-col">
+      <div class="turn-banner" id="turn-banner">Menyambung…</div>
+
+      <div class="draw-banner" id="draw-banner" hidden>
+        <span>Lawan menawarkan seri.</span>
+        <div class="draw-actions">
+          <button class="btn btn-primary btn-sm" id="draw-accept" type="button">Terima</button>
+          <button class="btn btn-ghost btn-sm" id="draw-decline" type="button">Tolak</button>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-ghost" id="btn-draw" type="button" disabled>Tawarkan seri</button>
+        <button class="btn btn-ghost danger" id="btn-resign" type="button" disabled>Menyerah</button>
+      </div>
+
+      <div class="gpanel">
+        <h3>Langkah</h3>
+        <ol class="moves" id="moves"></ol>
+      </div>
+
+      <div class="gpanel">
+        <h3>Chat</h3>
+        <div class="chat-log" id="chat-log"></div>
+        <form class="chat-form" id="chat-form" autocomplete="off">
+          <input id="chat-input" type="text" maxlength="200" placeholder="Tulis pesan…" aria-label="Pesan chat">
+          <button class="btn btn-ghost btn-sm" type="submit">Kirim</button>
+        </form>
+      </div>
+    </aside>
+  </main>
+
+  <div class="modal" id="promo-modal" hidden>
+    <div class="modal-card">
+      <h3>Promosi bidak</h3>
+      <div class="promo-row">
+        <button type="button" class="promo-btn" data-piece="q" aria-label="Menteri"></button>
+        <button type="button" class="promo-btn" data-piece="r" aria-label="Benteng"></button>
+        <button type="button" class="promo-btn" data-piece="b" aria-label="Gajah"></button>
+        <button type="button" class="promo-btn" data-piece="n" aria-label="Kuda"></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="result-modal" hidden>
+    <div class="modal-card">
+      <span class="eyebrow">Pertandingan selesai</span>
+      <h2 id="result-title">—</h2>
+      <p class="result-reason" id="result-reason"></p>
+      <p class="result-rating" id="result-rating"></p>
+      <div class="result-actions">
+        <a class="btn btn-primary" href="{{ url_for('dashboard.index') }}">Kembali ke dashboard</a>
+        <button class="btn btn-ghost" id="result-close" type="button">Lihat papan</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toast"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>window.GAME_CONFIG = {{ game_config|tojson }};</script>
+<script src="{{ url_for('static', filename='js/vendor/socket.io.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends "layouts/app.html" %}
+{% from "layouts/_icons.html" import icon %}
+
+{% block title %}Dashboard — CHECKMATE ARENA{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+  <div class="flash flash-{{ category }}" role="alert">{{ message }}</div>
+  {% endfor %}
+{% endwith %}
+
+{% if active_game %}
+<div class="resume-banner reveal" style="--i:0">
+  <div>
+    <strong>{% if active_game.status == 'active' %}Pertandingan sedang berlangsung{% else %}Room menunggu lawan{% endif %}</strong>
+    <span>Kode room: {{ active_game.room_code }}</span>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('game.play', code=active_game.room_code) }}">Lanjutkan</a>
+</div>
+{% endif %}
+
+<section class="hero reveal" style="--i:0">
+  <div class="hero-board" aria-hidden="true"></div>
+  <div class="hero-content">
+    <span class="eyebrow">Online Chess Platform</span>
+    <h1>Selamat datang, {{ player.username }}.<br>Waktunya bertanding.</h1>
+    <p>Mainkan catur realtime melawan teman atau lawan dengan rating sepadan. Setiap langkah divalidasi server, jadi setiap pertandingan adil.</p>
+    <div class="hero-chips">
+      <div class="chip"><strong>{{ platform.players }}</strong><span>pemain terdaftar</span></div>
+      <div class="chip"><strong>{{ platform.games }}</strong><span>pertandingan selesai</span></div>
+    </div>
+  </div>
+</section>
+
+<h2 class="section-title">Mulai bermain</h2>
+<section class="play-grid" id="play">
+  <article class="play-tile reveal" style="--i:1">
+    <div class="tile-head"><span class="tile-icon">{{ icon('zap', 22) }}</span></div>
+    <h3>Quick Play</h3>
+    <p>Cari lawan otomatis dengan rating yang mirip. Waktu 10 menit.</p>
+    <button class="btn btn-primary" id="quickplay-btn" type="button">Cari lawan</button>
+  </article>
+
+  <article class="play-tile reveal" style="--i:2">
+    <div class="tile-head"><span class="tile-icon">{{ icon('plus', 22) }}</span></div>
+    <h3>Buat Room</h3>
+    <p>Buat room pribadi lalu bagikan kode atau link ke temanmu.</p>
+    <form class="tile-form" method="post" action="{{ url_for('game.create_room') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <select class="select" name="time_control" aria-label="Waktu per pemain">
+          <option value="180+0">3 menit</option>
+          <option value="300+0">5 menit</option>
+          <option value="600+0" selected>10 menit</option>
+          <option value="900+10">15 menit + 10 detik</option>
+        </select>
+        <select class="select" name="color" aria-label="Warna bidak">
+          <option value="random" selected>Warna acak</option>
+          <option value="white">Putih</option>
+          <option value="black">Hitam</option>
+        </select>
+      </div>
+      <button class="btn btn-ghost" type="submit">Buat room</button>
+    </form>
+  </article>
+
+  <article class="play-tile reveal" style="--i:3">
+    <div class="tile-head"><span class="tile-icon">{{ icon('join', 22) }}</span></div>
+    <h3>Gabung Room</h3>
+    <p>Masukkan kode room dari temanmu.</p>
+    <form class="join-row" method="post" action="{{ url_for('game.join_room_view') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input class="input" type="text" name="code" placeholder="KODE ROOM" maxlength="8" autocomplete="off" required aria-label="Kode room">
+      <button class="btn btn-ghost" type="submit" aria-label="Gabung">{{ icon('join', 18) }}</button>
+    </form>
+  </article>
+</section>
+
+<h2 class="section-title">Statistik kamu</h2>
+<section class="stat-grid">
+  {% for card in stat_cards %}
+  <article class="stat-card reveal" style="--i:{{ loop.index + 3 }}">
+    <div class="stat-top"><span>{{ card.label }}</span>{{ icon(card.icon, 20) }}</div>
+    <div class="stat-value">{{ card.value }}{% if card.suffix and card.value != '—' %}<small>{{ card.suffix }}</small>{% endif %}</div>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="split">
+  <article class="panel reveal" style="--i:8">
+    <div class="panel-head"><h3>Pertandingan terakhir</h3></div>
+    <div class="empty-state">
+      {{ icon('swords', 34) }}
+      <strong>Riwayat segera hadir</strong>
+      <p>Daftar pertandingan akan tampil di halaman Match History.</p>
+    </div>
+  </article>
+
+  <article class="panel reveal" style="--i:9">
+    <div class="panel-head"><h3>Leaderboard</h3></div>
+    {% if leaders %}
+    <ol class="leader-list">
+      {% for p in leaders %}
+      <li class="leader-row">
+        <span class="leader-rank">{{ loop.index }}</span>
+        <span class="avatar" style="background: {{ p.avatar_color }}">{{ p.username[:1]|upper }}</span>
+        <span class="leader-name">{{ p.username }}</span>
+        <span class="leader-rating">{{ p.rating }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <div class="empty-state">
+      {{ icon('trophy', 34) }}
+      <strong>Belum ada pemain</strong>
+      <p>Pemain yang mendaftar akan muncul di peringkat ini.</p>
+    </div>
+    {% endif %}
+  </article>
+</section>
+
+<div class="qp-overlay" id="qp-overlay" hidden>
+  <div class="qp-card">
+    <div class="spinner" aria-hidden="true"></div>
+    <h3>Mencari lawan…</h3>
+    <p>Waktu tunggu: <span id="qp-timer">0</span> detik</p>
+    <p class="qp-sub">Kamu dipasangkan dengan pemain berating mirip. Selisih rating yang diizinkan melebar seiring waktu.</p>
+    <button class="btn btn-ghost" id="qp-cancel" type="button">Batal</button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/vendor/socket.io.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/quickplay.js') }}"></script>
+{% endblock %}

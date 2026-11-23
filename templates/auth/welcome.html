@@ -1,0 +1,55 @@
+{% extends "layouts/base.html" %}
+{% from "layouts/_icons.html" import logo_mark %}
+
+{% block title %}Mulai — CHECKMATE ARENA{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block body %}
+<main class="auth-wrap">
+  <div class="auth-board" aria-hidden="true"></div>
+
+  <section class="auth-card">
+    <div class="auth-brand">
+      {{ logo_mark(52) }}
+      <div class="auth-brand-text"><strong>CHECKMATE</strong><span>ARENA</span></div>
+    </div>
+
+    <h1>Pilih nickname-mu</h1>
+    <p class="auth-sub">Profil langsung dibuat dan kamu bisa langsung bermain. Tanpa password, tanpa email.</p>
+
+    <form method="post" action="{{ url_for('auth.join') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <label class="field-label" for="nickname">Nickname</label>
+      <input
+        class="field{% if error %} has-error{% endif %}"
+        id="nickname"
+        name="nickname"
+        type="text"
+        value="{{ nickname }}"
+        minlength="3"
+        maxlength="20"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="contoh: RajaCatur"
+        autofocus
+        required
+      >
+
+      {% if error %}
+      <p class="field-error" role="alert">{{ error }}</p>
+      {% else %}
+      <p class="field-hint">3 sampai 20 karakter: huruf, angka, atau garis bawah (_).</p>
+      {% endif %}
+
+      <button class="btn btn-primary auth-submit" type="submit">Mulai bermain</button>
+    </form>
+
+    <p class="auth-note">Profilmu tersimpan di browser ini. Jika data browser dihapus atau kamu pindah perangkat, profil tidak dapat dibuka kembali.</p>
+  </section>
+</main>
+{% endblock %}
